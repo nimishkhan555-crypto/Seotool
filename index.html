@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tag &amp; SEO Extractor for YouTube and Instagram</title>
+<meta name="description" content="Paste a YouTube link to see its title, description, tags and hashtags. Paste an Instagram caption to pull out its hashtags. Free, runs in your browser.">
+<script>
+  // Apply saved/system theme before paint to avoid a flash.
+  (function(){try{var t=localStorage.getItem('theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark');}catch(e){}})();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<script>tailwind.config={darkMode:'class',theme:{extend:{fontFamily:{sans:['"Schibsted Grotesk"','system-ui','sans-serif']}}}}</script>
+<style>
+  :root{--bg:#f6f5f1;--surface:#ffffff;--ink:#16202a;--muted:#5d6b78;--line:#dcdad2;--accent:#0b6e8a;--accent-ink:#ffffff;--chip:#e7f1f4;}
+  .dark{--bg:#0f1a22;--surface:#16242f;--ink:#e8eef2;--muted:#93a4b2;--line:#2a3b48;--accent:#5cc3df;--accent-ink:#06222c;--chip:#1d3442;}
+  body{background:var(--bg);color:var(--ink);font-family:"Schibsted Grotesk",system-ui,sans-serif}
+  .surface{background:var(--surface);border:1px solid var(--line)}
+  .muted{color:var(--muted)}
+  .btn{background:var(--accent);color:var(--accent-ink);font-weight:700}
+  .btn:hover{filter:brightness(1.08)}
+  .btn-ghost{border:1px solid var(--line);color:var(--ink)}
+  .btn-ghost:hover{border-color:var(--accent)}
+  .chip{background:var(--chip);color:var(--ink);border:1px solid transparent;cursor:pointer}
+  .chip:hover{border-color:var(--accent)}
+  .field{background:var(--surface);border:1px solid var(--line);color:var(--ink)}
+  .field::placeholder{color:var(--muted)}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .ad{border:1px dashed var(--line);color:var(--muted)}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body class="min-h-screen font-sans antialiased">
+
+<header class="max-w-4xl mx-auto px-4 pt-6 flex items-center justify-between">
+  <a href="./" class="text-lg font-extrabold tracking-tight">TagPull</a>
+  <button id="themeBtn" type="button" class="btn-ghost rounded-lg px-3 py-1.5 text-sm" aria-label="Toggle dark mode">Dark / Light</button>
+</header>
+
+<main class="max-w-4xl mx-auto px-4 pb-16">
+
+  <section class="pt-10 pb-6">
+    <h1 class="text-3xl sm:text-5xl font-extrabold tracking-tight leading-tight max-w-2xl">See the tags and keywords behind any video.</h1>
+    <p class="muted mt-4 max-w-xl text-base sm:text-lg">Paste a YouTube link to get its title, description, tags and hashtags. For Instagram, paste the caption to pull out the hashtags.</p>
+  </section>
+
+  <!-- ===== AD SLOT 1: below header (replace the inner content with your AdSense code) ===== -->
+  <div id="ad-top" class="ad rounded-xl text-center text-sm py-6 my-4" aria-label="Advertisement">
+    <!-- Paste your AdSense <ins class="adsbygoogle"> block here -->
+    Ad space (728×90 / responsive)
+  </div>
+
+  <!-- Input -->
+  <section class="surface rounded-2xl p-4 sm:p-6 mt-6">
+    <label for="url" class="block text-sm font-bold mb-2">Video URL</label>
+    <div class="flex flex-col sm:flex-row gap-3">
+      <input id="url" type="url" inputmode="url" autocomplete="off" placeholder="https://www.youtube.com/watch?v=…"
+        class="field flex-1 rounded-xl px-4 py-3 text-base">
+      <button id="go" type="button" class="btn rounded-xl px-6 py-3">Extract SEO Data</button>
+    </div>
+
+    <!-- Shown only for Instagram links -->
+    <div id="igBox" class="hidden mt-4">
+      <p class="muted text-sm mb-2">Instagram doesn’t allow browsers to read posts directly. Copy the caption from the post and paste it here.</p>
+      <label for="igCaption" class="block text-sm font-bold mb-2">Instagram caption</label>
+      <textarea id="igCaption" rows="5" class="field w-full rounded-xl px-4 py-3 text-base" placeholder="Paste the caption text with its hashtags"></textarea>
+    </div>
+
+    <p id="status" class="text-sm mt-3 min-h-[1.25rem]" role="status" aria-live="polite"></p>
+  </section>
+
+  <!-- Output -->
+  <section id="out" class="hidden mt-8 space-y-6" aria-live="polite">
+    <div id="demoNote" class="hidden rounded-xl px-4 py-3 text-sm surface">
+      Showing sample data because no API key is set. Add your key in the code to see real results.
+    </div>
+
+    <div class="surface rounded-2xl p-4 sm:p-6">
+      <div class="flex items-center justify-between gap-3 mb-2">
+        <h2 class="font-bold">Title</h2>
+        <button type="button" class="btn-ghost rounded-lg px-3 py-1 text-sm" data-copy="#oTitle">Copy title</button>
+      </div>
+      <p id="oTitle" class="text-xl sm:text-2xl font-bold leading-snug break-words"></p>
+      <p id="oMeta" class="muted text-sm mt-2"></p>
+    </div>
+
+    <div class="surface rounded-2xl p-4 sm:p-6">
+      <div class="flex items-center justify-between gap-3 mb-2">
+        <h2 class="font-bold">Description</h2>
+        <button type="button" class="btn-ghost rounded-lg px-3 py-1 text-sm" data-copy="#oDesc">Copy description</button>
+      </div>
+      <pre id="oDesc" class="whitespace-pre-wrap break-words text-sm leading-relaxed max-h-72 overflow-y-auto font-sans"></pre>
+    </div>
+
+    <div class="surface rounded-2xl p-4 sm:p-6">
+      <div class="flex items-center justify-between gap-3 mb-3">
+        <h2 class="font-bold">Tags <span id="tagCount" class="muted font-normal text-sm"></span></h2>
+        <button id="copyAll" type="button" class="btn rounded-lg px-4 py-1.5 text-sm">Copy All Tags</button>
+      </div>
+      <div id="tagList" class="flex flex-wrap gap-2"></div>
+      <p id="tagEmpty" class="muted text-sm hidden">No tags found for this video.</p>
+
+      <h2 class="font-bold mt-6 mb-3">Hashtags <span id="hashCount" class="muted font-normal text-sm"></span></h2>
+      <div id="hashList" class="flex flex-wrap gap-2"></div>
+      <p id="hashEmpty" class="muted text-sm hidden">No hashtags found.</p>
+      <div class="mt-4">
+        <button id="copyHash" type="button" class="btn-ghost rounded-lg px-4 py-1.5 text-sm">Copy all hashtags</button>
+      </div>
+      <p class="muted text-xs mt-4">Tip: click any chip to copy it on its own.</p>
+    </div>
+  </section>
+
+  <!-- ===== AD SLOT 2: below output ===== -->
+  <div id="ad-bottom" class="ad rounded-xl text-center text-sm py-6 mt-8" aria-label="Advertisement">
+    <!-- Paste your AdSense <ins class="adsbygoogle"> block here -->
+    Ad space (300×250 / responsive)
+  </div>
+
+</main>
+
+<footer class="border-t" style="border-color:var(--line)">
+  <div class="max-w-4xl mx-auto px-4 py-6 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between text-sm muted">
+    <p>© <span id="yr"></span> TagPull. Not affiliated with YouTube or Instagram.</p>
+    <nav class="flex gap-5" aria-label="Legal">
+      <!-- Point these to your own pages (e.g. privacy.html) when you create them -->
+      <a href="privacy.html" class="hover:underline">Privacy Policy</a>
+      <a href="terms.html" class="hover:underline">Terms of Service</a>
+      <a href="mailto:you@example.com" class="hover:underline">Contact</a>
+    </nav>
+  </div>
+</footer>
+
+<script>
+/* =====================================================================
+   1) PASTE YOUR FREE YOUTUBE DATA API v3 KEY BELOW
+   ---------------------------------------------------------------------
+   Get one at https://console.cloud.google.com → create project →
+   enable "YouTube Data API v3" → Credentials → Create API key.
+   IMPORTANT: this is a client-side site, so the key is visible to anyone.
+   In Google Cloud, restrict the key to "HTTP referrers" (your GitHub Pages
+   domain) and to the YouTube Data API only. Free quota: 10,000 units/day
+   (one lookup costs 1 unit).
+   ===================================================================== */
+const YOUTUBE_API_KEY = "PASTE_YOUR_API_KEY_HERE";
+
+const $ = (s) => document.querySelector(s);
+const state = { tags: [], hashtags: [] };
+
+/* ---------- Theme ---------- */
+$('#themeBtn').addEventListener('click', () => {
+  const dark = document.documentElement.classList.toggle('dark');
+  try { localStorage.setItem('theme', dark ? 'dark' : 'light'); } catch (e) {}
+});
+$('#yr').textContent = new Date().getFullYear();
+
+/* ---------- URL helpers ---------- */
+function getYouTubeId(input) {
+  try {
+    const u = new URL(input.trim());
+    const h = u.hostname.replace(/^www\.|^m\./, '');
+    if (h === 'youtu.be') return u.pathname.slice(1).split('/')[0] || null;
+    if (h.endsWith('youtube.com') || h.endsWith('youtube-nocookie.com')) {
+      if (u.searchParams.get('v')) return u.searchParams.get('v');
+      const m = u.pathname.match(/^\/(shorts|embed|live|v)\/([\w-]{6,})/);
+      if (m) return m[2];
+    }
+  } catch (e) {}
+  return null;
+}
+const isInstagram = (input) => /(^|\/\/)(www\.)?instagram\.com\//i.test(input.trim());
+
+/* ---------- Hashtag extraction (works with any language) ---------- */
+function extractHashtags(text) {
+  const found = (text || '').match(/#[\p{L}\p{N}_]+/gu) || [];
+  return [...new Set(found.map((t) => t.toLowerCase()))];
+}
+
+/* ---------- Fallback demo data (used when no API key is set) ---------- */
+const DEMO = {
+  title: 'How to Grow Your Channel in 2026: 7 Proven Tips',
+  description: 'In this video we break down seven simple tactics that help small channels get discovered.\n\nChapters:\n0:00 Intro\n1:10 Titles that get clicks\n3:45 Tags and keywords\n\n#youtubegrowth #contentcreator #seotips',
+  channel: 'Sample Channel',
+  published: new Date().toISOString(),
+  tags: ['youtube growth', 'youtube seo', 'grow youtube channel', 'video tags', 'content creator tips', 'keyword research']
+};
+
+/* ---------- Fetch from YouTube Data API ---------- */
+async function fetchYouTube(id) {
+  const url = 'https://www.googleapis.com/youtube/v3/videos?part=snippet&id=' +
+    encodeURIComponent(id) + '&key=' + encodeURIComponent(YOUTUBE_API_KEY);
+  const res = await fetch(url);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data?.error?.message || 'YouTube API request failed.');
+  if (!data.items || !data.items.length) throw new Error('Video not found. Check that the link is correct and the video is public.');
+  const s = data.items[0].snippet;
+  return { title: s.title, description: s.description, channel: s.channelTitle, published: s.publishedAt, tags: s.tags || [] };
+}
+
+/* ---------- Rendering ---------- */
+function setStatus(msg, isError) {
+  const el = $('#status');
+  el.textContent = msg || '';
+  el.style.color = isError ? '#d1493f' : 'var(--muted)';
+}
+
+function renderChips(container, items, emptyEl, countEl) {
+  container.textContent = '';
+  emptyEl.classList.toggle('hidden', items.length > 0);
+  countEl.textContent = items.length ? '(' + items.length + ')' : '';
+  items.forEach((t) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'chip rounded-full px-3 py-1 text-sm';
+    b.textContent = t;
+    b.title = 'Click to copy';
+    b.addEventListener('click', () => copyText(t, b));
+    container.appendChild(b);
+  });
+}
+
+function render(d, demo, source) {
+  state.tags = d.tags;
+  state.hashtags = extractHashtags(d.description);
+  $('#oTitle').textContent = d.title;
+  const meta = [];
+  if (d.channel) meta.push(d.channel);
+  if (d.published) meta.push(new Date(d.published).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }));
+  $('#oMeta').textContent = meta.join(' · ');
+  $('#oDesc').textContent = d.description || '(No description)';
+  renderChips($('#tagList'), state.tags, $('#tagEmpty'), $('#tagCount'));
+  renderChips($('#hashList'), state.hashtags, $('#hashEmpty'), $('#hashCount'));
+  $('#demoNote').classList.toggle('hidden', !demo);
+  $('#out').classList.remove('hidden');
+  $('#copyAll').classList.toggle('hidden', source === 'instagram');
+  $('#out').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/* ---------- Copy helpers ---------- */
+async function copyText(text, btn) {
+  try {
+    if (navigator.clipboard && window.isSecureContext) await navigator.clipboard.writeText(text);
+    else {
+      const ta = document.createElement('textarea');
+      ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove();
+    }
+    if (btn) {
+      const old = btn.textContent;
+      btn.textContent = 'Copied';
+      setTimeout(() => (btn.textContent = old), 1200);
+    }
+  } catch (e) { setStatus('Copy failed. Select the text and copy it manually.', true); }
+}
+
+$('#copyAll').addEventListener('click', (e) => {
+  if (!state.tags.length) return setStatus('There are no tags to copy.', true);
+  copyText(state.tags.join(', '), e.currentTarget);
+});
+$('#copyHash').addEventListener('click', (e) => {
+  if (!state.hashtags.length) return setStatus('There are no hashtags to copy.', true);
+  copyText(state.hashtags.join(' '), e.currentTarget);
+});
+document.querySelectorAll('[data-copy]').forEach((b) =>
+  b.addEventListener('click', () => copyText($(b.dataset.copy).textContent, b)));
+
+/* ---------- Main action ---------- */
+async function extract() {
+  const input = $('#url').value.trim();
+  setStatus('');
+  if (!input) return setStatus('Paste a YouTube or Instagram link first.', true);
+
+  // Instagram: browsers can't read posts (CORS + login wall), so parse a pasted caption.
+  if (isInstagram(input)) {
+    $('#igBox').classList.remove('hidden');
+    const caption = $('#igCaption').value.trim();
+    if (!caption) return setStatus('Paste the post caption in the box below, then click Extract SEO Data again.', true);
+    render({ title: 'Instagram post', description: caption, channel: '', published: '', tags: [] }, false, 'instagram');
+    return;
+  }
+  $('#igBox').classList.add('hidden');
+
+  const id = getYouTubeId(input);
+  if (!id) return setStatus('That doesn’t look like a YouTube video link. Try a watch, youtu.be or Shorts link.', true);
+
+  const btn = $('#go');
+  btn.disabled = true; btn.textContent = 'Extracting…';
+  try {
+    if (!YOUTUBE_API_KEY || YOUTUBE_API_KEY === 'PASTE_YOUR_API_KEY_HERE') {
+      render(DEMO, true, 'youtube');           // demo mode
+    } else {
+      render(await fetchYouTube(id), false, 'youtube');
+    }
+  } catch (err) {
+    setStatus(err.message || 'Something went wrong. Please try again.', true);
+  } finally {
+    btn.disabled = false; btn.textContent = 'Extract SEO Data';
+  }
+}
+
+$('#go').addEventListener('click', extract);
+$('#url').addEventListener('keydown', (e) => { if (e.key === 'Enter') extract(); });
+$('#url').addEventListener('input', (e) => $('#igBox').classList.toggle('hidden', !isInstagram(e.target.value)));
+</script>
+</body>
+</html>
